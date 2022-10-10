@@ -63,17 +63,67 @@
         <Buttons text="正在学习Vue">
             正在学习<strong>Vue</strong>
         </Buttons>
+
+        <div style="padding: 10px 0;">------------------------------------------------</div>
+
+        <!-- skl-16. v-lazy-image一行懒加载图片 暂时搁置 -->
+        <div>打开 `Devtools NetWork` 选项卡，检查 `Img` 过滤器看是否有效。</div>
+        <!-- <v-lazy-image src="../assets/images/nodata.png"></v-lazy-image> -->
+
+        <div style="padding: 10px 0;">------------------------------------------------</div>
+
+        <!-- skl-17. Vue动态样式类的几种方式 -->
+        <div style="display: flex; justify-content: center;">
+            <!-- 1 -->
+            <div style="width: 50px; height: 50px; margin: 5px;" :class="isDisabled ? 'disabledCss': 'notDisabledCss'"></div>
+            <!-- 2 -->
+            <div style="width: 50px; height: 50px; margin: 5px;" :class="{ isHasBorderRadius : classSign.isLoading, isHasBorderWidth: classSign.disabled }"></div>
+            <!-- 3 -->
+            <div style="width: 50px; height: 50px; margin: 5px; background-color: green;" :class="[ classSign.disabled && 'isHasBorderRadius', classSign.isLoading && 'isHasBorderWidth' ]"></div>
+        </div>
+
+        <div style="padding: 10px 0;">------------------------------------------------</div>
+
+        <!-- skl-18. 从组件外部调用一个方法 -->
+        <ChildOption ref="childOptionRef" />
+
+        <div style="padding: 10px 0;">------------------------------------------------</div>
+        <!-- skl-20. 联系 -->
+        <!-- 这里希望在父组件特定的事件场景中去触发显示子组件的内容，则可使用props控制子组件状态 -->
+        <!-- 此时子组件内有自己控制显隐的状态hidden，与父组件传入的props属性hidden相同，父组件传入的prop无法覆盖子组件的状态 -->
+        <Toggle title="点击标题可以显示隐藏" :hidden="hiddle" @toggle-hidden="hiddle = !hiddle">
+            <p>这是显示隐藏的内容</p>
+        </Toggle>
     </div>
 </template>
 
 <script lang="ts" setup>
-    import { reactive, toRef, ref, onMounted, getCurrentInstance } from 'vue';
+    import { reactive, toRef, ref, onMounted, getCurrentInstance, watch, watchEffect, computed } from 'vue';
     import User from '@/components/v3skills/User.vue'
     import VFor from '@/components/v3skills/VFor.vue'
     import FontSizeColor from '@/components/v3skills/FontSizeColor.vue'
     import Buttons from '@/components/v3skills/Button.vue'
+    import Toggle from '@/components/v3skills/Toggle.vue';
+
+    const hiddle = ref<boolean>(false)
 
     const classes = reactive(['Javascript', 'Node', 'Java', 'PHP'])
+
+    // skl-15. ref比reactive使用更好的一个场景
+    // 对象上使用ref，很容易看出是响应式对象
+    const bookInfo = ref({
+        name: 'English',
+        author: 'Eric'
+    })  // bookInfo.value.name
+    // 使用watch时，ref可以自动解开
+    watch(bookInfo, () => { console.log('bookInfo变化了') }, { deep: true })
+    // 而reactive需要一个回调函数返回
+    watch(() => classes, () => { console.log('classes变化了') }, { deep: true })
+    // 可以将ref放进reactive对象中，这样在reactive对象中访问ref时，可以自动脱ref
+    const bookName = ref('Math');
+    const bookInfoRive = reactive({ bookName })
+    watchEffect(() => { console.log(bookInfoRive.bookName, 'reactive includes ref change') }) // 直接监听
+    watch(bookName, () => console.log('bookInfoRive has changed'))
 
     const userState = reactive({
         uname: '张三',
@@ -95,6 +145,9 @@
     // v2
     const userOptionRef = ref(null)
 
+    // skl-18.联系
+    const childOptionRef = ref<any>(null)
+
     // skl-4. toRef保持对其源对象的响应链接
     const ageRef = toRef(userState, "age");
     ageRef.value++;
@@ -104,6 +157,12 @@
     // 如果要对源对象的某个可能不存在的属性用toRef保持响应链接，可以添加一个默认值
     const salaryRef = toRef(userState, "salary", 100);
     console.log(salaryRef.value, 'salaryRef.value')
+
+    const classSign = ref({
+        isLoading: false,
+        disabled: true
+    })
+    const isDisabled = computed(() => classSign.value.isLoading || classSign.value.disabled)
     
  
     const executeEvents = {
@@ -127,19 +186,43 @@
         console.log(userRef.value.privateData, '访问子组件的属性 不可直接访问（没有暴露）')  // undefined
         console.log(userRef.value.v3UpperCasePrivateData, '访问子组件的属性2 不可直接访问 已暴露')  // SECRECY 
 
+        // skl-18.联系 从组件外部调用方法(实用)
+        childOptionRef.value.childMethod()
+        // 最佳实践: 传递一个prop，子组件通过watch监听prop做修改。
+        // 为了进行多次操作，在子组件根据prop的修改操作完成后，通过emit通知父组件，由父组件重置prop的状态
+
+        setTimeout(() => {
+            bookInfo.value.name = 'Math';
+            classes.push('React')
+            bookInfoRive.bookName = 'Chinese'
+        }, 1000)
     })
     
 </script>
 
 <script lang="ts">
     import UserOption from '@/components/v3skills/UserOption.vue';
+    import ChildOption from '@/components/v3skills/ChildOption.vue'
     export default {
         components: {
-            UserOption
+            UserOption,
+            ChildOption
         },  
     }
 </script>
 
-<style>
-    
+<style lang="scss">
+    .disabledCss {
+        background-color: skyblue;
+    }
+
+    .notDisabledCss {
+        background-color: pink;
+    }
+    .isHasBorderRadius {
+        border-radius: 10px;
+    }
+    .isHasBorderWidth {
+        border: 3px solid orange;
+    }
 </style>
