@@ -31,10 +31,11 @@
 
 <script lang="ts">
     import { watch } from 'vue';
+    import { getValue } from '@/utils/methods';
 
     // Vue选项式 User组件
     export default {
-        // skl-5.只允许upperCasePrivateData被访问到
+        // skl-5.联系 只允许upperCasePrivateData被访问到
         expose: ['upperCasePrivateData'],
         props: {
             userInfo: Object
@@ -42,6 +43,12 @@
         data() {
             return {
                 privateData: 'secrecy',
+                // skl-23. 使在Vue之外创建的变量变成响应式
+                // 在选项式api中，放在组件的data中返回即可
+                getValue: getValue()
+                // 在Vue2中，还可以使用Vue.observable(getValue()) (作用等同于new Vue(getValue())
+                // 它让一个对象变成响应式数据，Vue内部会用它来处理data函数返回的对象
+                // Vue3中使用会返回一个可响应的代理，而对源对象直接进行变更仍然是不可响应的
             }
         },
         // skl-3.当父组件改变传入的props改变时我们需要做某些操作，可以使用watch监听props。

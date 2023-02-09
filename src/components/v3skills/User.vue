@@ -10,7 +10,8 @@
 </template>
 
 <script setup lang="ts">
-    import { computed, ref } from 'vue';
+    import { computed, reactive, ref } from 'vue';
+    import { getValue } from '@/utils/methods';
 
     const props = defineProps({
         uname: String,
@@ -27,6 +28,10 @@
         },
     })
 
+    // skl-23.联系
+    // Vue3的组合式api中，直接使用ref或reactive
+    const reactiveValue = reactive(getValue());
+
     const privateData = ref<string>('secrecy')
 
     const emit = defineEmits(['showUname', 'showUage'])
@@ -42,7 +47,7 @@
         return privateData.value.toUpperCase();
     })
 
-    // skl-5. Vue3组合式api中暴露允许被访问的属性
+    // skl-5.联系 Vue3组合式api中暴露允许被访问的属性
     defineExpose({
         v3UpperCasePrivateData
     })

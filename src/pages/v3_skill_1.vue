@@ -105,6 +105,10 @@
     import Buttons from '@/components/v3skills/Button.vue'
     import Toggle from '@/components/v3skills/Toggle.vue';
 
+    // skl-21.联系 外部组件访问元数据
+    const { columns } = Toggle;
+    console.log('外部组件访问元数据', columns)
+
     const hiddle = ref<boolean>(false)
 
     const classes = reactive(['Javascript', 'Node', 'Java', 'PHP'])
@@ -125,7 +129,7 @@
     watchEffect(() => { console.log(bookInfoRive.bookName, 'reactive includes ref change') }) // 直接监听
     watch(bookName, () => console.log('bookInfoRive has changed'))
 
-    const userState = reactive({
+    const userState = reactive<any>({
         uname: '张三',
         age: 18,
         sex: '男',
@@ -200,14 +204,25 @@
     
 </script>
 
+<!-- skl-31.何时在Vue中使用两个script（因为<script setup>块是被编译到组件的setup()函数中的） -->
+<!-- 1-需要使用选项API时，例如inheritAttrs -->
+<!-- 2-只需运行一次的setup代码，因为setup()是为每个组件运行的 -->
+<!-- 3-命名导出 -->
 <script lang="ts">
     import UserOption from '@/components/v3skills/UserOption.vue';
-    import ChildOption from '@/components/v3skills/ChildOption.vue'
+    import ChildOption from '@/components/v3skills/ChildOption.vue';
+    import { version } from 'vue';
+    // skl-31.如何检查Vue的版本
+    if (version.split(',')[0] === '2') {
+        console.log('请升级到 Vue3!')
+    } else {
+        console.log(version, 'version')
+    }
     export default {
         components: {
             UserOption,
             ChildOption
-        },  
+        },
     }
 </script>
 

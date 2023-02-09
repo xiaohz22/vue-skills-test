@@ -82,9 +82,12 @@
          >
           {{ tab }}
         </button>
-        <KeepAlive include="Home,Posts">
-          <component :is="tabs[currentTab]" test="测试" class="tab"></component>
-        </KeepAlive>
+        <!-- skl-33.动态组件与keep-alive的配合 & 内置的动画效果transtion -->
+        <Transition>
+          <KeepAlive include="Home,Posts">
+            <component :is="tabs[currentTab]" test="测试" class="tab"></component>
+          </KeepAlive>
+        </Transition>
       </div>
     
       <!-- 练习 Vue 的watch侦听器 -->

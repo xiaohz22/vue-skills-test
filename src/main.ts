@@ -1,4 +1,10 @@
-import { createApp } from 'vue'
+// skl-32.联系
+// 浏览器内模板编译：
+// vue.runtime.esm-bundler.js（默认）仅运行时，并要求所有模板都要预先编译
+// vue.esm-bundler.js 包含运行时编译器
+// import { createApp } from 'vue'
+import { createApp } from 'vue/dist/vue.esm-bundler.js' // 引入createApp用此替换
+
 import './style.css'
 import router from './router/index'
 import store from './store'
@@ -45,6 +51,22 @@ app.use(store)
 // Vue.prototype.$myGlobal = "Vue2全局属性"
 // Vue3声明全局属性
 app.config.globalProperties.$myGlobal = "Vue3全局属性";
+
+// skl-33.Vue性能追踪
+// true可以在浏览器开发工具的"性能/时间线"页中启用对组件初始化、编译、渲染和修补的性能表现追踪
+// 仅在开发模式和支持 performance.mark API的浏览器中工作
+app.config.performance = true;
+
+// skl-34.处理错误和警告的更好方法
+// 添加一个自定义的错误处理程序，对记录错误很有用
+// 或更优雅地处理错误
+app.config.errorHandler = (err: unknown) => {
+    alert(err);
+}
+// 自定义警告处理程序（只在开发中环境有效）
+app.config.warnHandler = (warn: unknown) => {
+    console.warn(`[CUSTOM WARNING] ${warn}`)
+}
 
 app.mount('#app')
 

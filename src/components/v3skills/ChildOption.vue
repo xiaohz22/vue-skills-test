@@ -25,11 +25,13 @@
             }
         },
         methods: {
+            // skl-18.联系
             childMethod() {
                 console.log('调用了 Chilld组件的方法，有一个属性：', this.userInfo.name)  // ....张爱佳
             }
         },
         computed: {
+            // skl-19.联系
             bookNameEdit(): string {
                 return '书籍：' + this.bookInfo.name
             }
