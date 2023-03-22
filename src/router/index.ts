@@ -17,7 +17,8 @@ const routes = [
     { path: '/v3', component: V3Page, children: [
         { path: '', component: () => import('../components/HelloVue3.vue') },
         { path: 'v3-skill1', component: () => import('../pages/v3_skill_1.vue') },
-        { path: 'v3-skill2', component: () => import('../pages/v3-skill-2/v3_skill_2.vue') }
+        { path: 'v3-skill2', component: () => import('../pages/v3-skill-2/v3_skill_2.vue') },
+        { path: 'v3-skill3', component: () => import('../pages/v3-skill-3/v3_skill_3_setup.vue') },
     ] }
 ]
 

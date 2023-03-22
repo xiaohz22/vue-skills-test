@@ -30,6 +30,9 @@
       obj.child.age++;
     }
     
+    // skl-45.在组合中使用watch的常用姿势
+    // 认识：watch里面是为了产生副作用而特意创建的，是在组件被重新渲染之前被调用的（默认）。
+    // ---------------------------------------------------------------------------------
     // 第一个参数可以是getter返回值函数（还可以是ref、computed、响应式对象或以上组成的值）
     // watch(() => question1.value + question2.value, (newQuestion, oldQuestion) => {
     //   console.log('new:', newQuestion, 'old:', oldQuestion)
@@ -47,10 +50,24 @@
     // watch([question1, () => question1.value + question2.value], ([newX, newY]) => {
     //   console.log('newX:', newX, 'newY:', newY)  // newX为question1的最新值 newY为question1+question2的最新值
     // })
+
+    // 当age一直变化且大于40时，会一直触发watch;当age一直变化且小于等于40，不会触发watch回调。
+    // const age = ref(24)
+    // watch(() => age.value > 40, ( newValue ) => {
+    //   console.log(newValue)
+    // })
     
     // watch(() => obj.child, (newObj, oldObj) => {
     //   console.log('newObj:', newObj, 'oldObj:', oldObj)
     // }, { deep: true });  // 深层侦听 改变obj.child.age的值也会被侦听到
+
+    // 在DOM操作后运行——flush
+    // 设置 flush: 'post', 侦听器将延迟到组件渲染之后再执行
+    // 设置 flush: 'sync', 在响应式依赖发生改变时立即触发侦听器（例如要使缓存失效）
+    // 当包含在观察回调中的副作用需要包含在DOM中的信息时，使用flush是首选
+    // watch(age, ( newValue ) => {
+    //   Element.value.style = ...
+    // }, { flush: 'post'} )
     
     watch(question1, (newQ, oldQ) => {
       console.log('newQ:', newQ, 'oldQ:', oldQ)

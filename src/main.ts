@@ -13,6 +13,8 @@ import App from './App.vue'
 
 const app = createApp(App)
 
+// skl-44.自动注册全局组件（Webpack/Vite）https://developer.aliyun.com/article/1094208
+
 // skl-7.自定义指令传参小窍门
 // 这里有一个自定义指令，使字体变大
 app.directive('font-size-color', {
