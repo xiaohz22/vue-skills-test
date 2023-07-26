@@ -123,6 +123,7 @@
         <router-link to="/apptest2">去看看不常用的组合式API</router-link>
         <router-link to="/piniatest">去学习Pinia</router-link>
         <router-link to="/v3">去学习Vue3</router-link>
+        <router-link to="/circlego">圆周滑动</router-link>
       </div>
 
       <router-view></router-view>

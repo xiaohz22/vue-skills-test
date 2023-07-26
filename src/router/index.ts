@@ -4,6 +4,7 @@ import HookTest from '../pages/hook_test.vue';
 import AppTest2 from '../pages/app_test2.vue';
 import PiniaTest from '../pages/pinia_test.vue';
 import V3Page from '../pages/v3Page.vue';
+import CircleGo from '../pages/circleGo.vue';
 
 
 const routes = [
@@ -14,6 +15,7 @@ const routes = [
     { path: '/hooktest', component: HookTest, name: 'hookTest' },
     { path: '/apptest2', component: AppTest2, name: 'appTest2'},
     { path: '/piniatest', component: PiniaTest, name: 'piniaTest'},
+    { path: '/circlego', component: CircleGo, name: 'circleGo'},
     { path: '/v3', component: V3Page, children: [
         { path: '', component: () => import('../components/HelloVue3.vue') },
         { path: 'v3-skill1', component: () => import('../pages/v3_skill_1.vue') },

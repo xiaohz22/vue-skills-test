@@ -75,6 +75,9 @@
         <template #append>.com</template>
     </MyEleInput>
 
+    <!-- WebSorket练习 -->
+    <WebSocketTest ref="webSocketRef" @success-web="successWeb" @success-new-receive="successNewReceive" />
+
 </template>
 
 <script lang="ts" setup>
@@ -84,6 +87,7 @@ import MyButton from '@/pages/v3-skill-3/components/MyButton.vue';
 import EmitValid from '@/pages/v3-skill-3/components/EmitValid.vue';
 import DetectOutsideClick from '@/pages/v3-skill-3/components/DetectOutsideClick.vue';
 import MyEleInput from '@/pages/v3-skill-3/components/MyEleInput.vue';
+import WebSocketTest from './components/WebSocketTest.vue';
 import { onBeforeRouteLeave } from 'vue-router';
 
 // skl-41.联系
@@ -138,6 +142,17 @@ const onOutsizeClick = () => {
 
 // skl-51.联系
 const myValue = ref<string>('')
+
+// webSocket练习
+const webSocketRef = ref<any>(null);
+const successWeb = () => {
+    // 连接成功
+    webSocketRef.value?.sendTest('userId=12345678')
+}
+const successNewReceive = (recMsg: unknown) => {
+    // 拿到服务端实时发送的数据
+    console.log('recMsg', recMsg)
+}
 
 </script>
 
