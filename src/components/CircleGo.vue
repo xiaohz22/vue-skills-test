@@ -22,9 +22,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, watch, computed, watchEffect } from 'vue';
 
-const emits = defineEmits(['updateCvsPath', 'sendCurPointTime'])
+const props = defineProps({
+    timeList: {
+        type: Array<number>,
+        default: []
+    }
+})
+
+const emits = defineEmits(['updateCurPointTime'])
 
 const innerRef = ref<HTMLElement>()
 const root = ref<HTMLElement>()
@@ -42,16 +49,16 @@ const center = ref<number[]>([])
 const r = 100
 // 传入的时间点位：组件传入时间戳，转化得到今天已经历的时间分钟数
 // const timeList = ref<number[]>([360, 478, 910, 1080, 1221]) 
-const timeList = ref<number[]>([478, 1080]) 
 const time0600 = 360
 const time1800 = 1080 
-const timePointList = ref<any[]>([])
+const timePointList = ref<{ x: number, y: number }[]>([])
 const curPoinIndex = ref<number>(-1)
+const curPointInitXY = { x: -1, y: -1 } // 保存被点击的点位的初始位置x、y
 const initTimePoint = () => {
     // radian * 180 / Math.PI = 角度
     // 圆盘总360deg 1deg = 4min, 1min = 0.25deg
-    timePointList.value = timeList.value.map(item => {
-        const radian = getRadian(item)
+    timePointList.value = props.timeList.map((item: any) => {
+        const radian = getRadianByMins(item)
         const newX = center.value[0] + Math.cos(radian) * r; // Math.cos(radian) * r = x的长度
         const newY = center.value[1] + Math.sin(radian) * r; // Math.sin(radian) * r = y的长度
         return { x: newX, y: newY }
@@ -78,6 +85,8 @@ const startDrag = (event: any, index: number) => {
     offsetX.value = (platform.value === 'web' ? event.clientX : event.targetTouches[0].clientX) - event.target.offsetLeft;
     offsetY.value = (platform.value === 'web' ? event.clientY : event.targetTouches[0].clientY) - event.target.offsetTop;
     curPoinIndex.value = index
+    curPointInitXY.x = timePointList.value[index].x
+    curPointInitXY.y = timePointList.value[index].y
 };
 
 
@@ -91,53 +100,125 @@ const drag = (event: any) => {
         const centerY = outerRef.value!.offsetTop
         const radian  = Math.atan2(y - centerY, x - centerX); // (x, y)到(0, 0)的线与x轴的弧度值
         // console.log('radian', radian * 180 / Math.PI) // radian * 180 / Math.PI = 角度
-        console.log('radian', radian)
+        // console.log('radian', radian)
         const newX = centerX + Math.cos(radian) * r; // Math.cos(radian * r = x的长度
         const newY = centerY + Math.sin(radian) * r; // Math.sin(radia) * r = y的长度
+
+        /** 绘制圆弧规则 */
+        const currentRuleRadian = getArcRuleRadian(radian)
+        /** 拖动最大mins点位 */
+        if (isMaxTimePoint.value) {
+            clearCanvas()
+            draw(initStartRadian.value, currentRuleRadian, false)
+        }
+        /** 拖动最小mins点位 */
+        if (isMinTimePoint.value) {
+            clearCanvas()
+            draw(currentRuleRadian, initEndRadian.value, false)
+        }
 
         /** 拖动改变每个点位的位置 */
         timePointList.value[curPoinIndex.value].x = newX
         timePointList.value[curPoinIndex.value].y = newY
-
     }
 };
 
 const endDrag = (event: MouseEvent) => {
+    if (!isDragging.value) return
     const x = event.clientX - offsetX.value;
     const y = event.clientY - offsetY.value;
     const radian  = Math.atan2(y - center.value[1], x - center.value[0])
     const currentAngle = radian * 180 / Math.PI
     // const angleRule360 = (currentAngle + 360) % 360
-    console.log('currentAngle', currentAngle, (currentAngle + 360) % 360)
-    if (currentAngle >= 0) {
+    // console.log('currentAngle', currentAngle)
+
+    let recoveryPoint: any = () => {
+        timePointList.value[curPoinIndex.value].x = curPointInitXY.x
+        timePointList.value[curPoinIndex.value].y = curPointInitXY.y
+    }
+
+    /** 最小点位的mins不能超过最大点位的mins，否则不允许绘制 */
+    if (isMinTimePoint.value) {
+        const maxMins = Math.max(...props.timeList) 
+        if (getAngleMins(currentAngle) >= maxMins) {
+            recoveryPoint()
+            const initRuleRadian = getArcRuleRadian(getRadianByMins(props.timeList[curPoinIndex.value]))
+            clearCanvas()
+            draw(initRuleRadian, initEndRadian.value)
+            isDragging.value = false;
+            return
+        }
+    }
+    /** 最大点位的mins不能小于最小点位的mins，否则不允许绘制 */
+    if (isMaxTimePoint.value) {
+        const minMins = Math.min(...props.timeList) 
+        if (getAngleMins(currentAngle) <= minMins) {
+            recoveryPoint()
+            const initRuleRadian = getArcRuleRadian(getRadianByMins(props.timeList[curPoinIndex.value]))
+            clearCanvas()
+            draw(initStartRadian.value, initRuleRadian)
+            isDragging.value = false;
+            return
+        }
+    }
+    /** 中间点位mins不能超过两侧点位 */
+    if (!isMaxTimePoint.value && !isMinTimePoint.value) {
+        const curIndex = curPoinIndex.value
+        const prevMins = props.timeList[curIndex - 1]
+        const nextMins = props.timeList[curIndex + 1]
+        if (getAngleMins(currentAngle) < prevMins || getAngleMins(currentAngle) > nextMins) {
+            recoveryPoint()
+            isDragging.value = false;
+            return
+        }
+    }
+
+    const mins = getAngleMins(currentAngle)
+    emits('updateCurPointTime', mins, curPoinIndex.value)
+
+    isDragging.value = false;
+    recoveryPoint = null
+}
+
+/** 获取角度对应的mins */
+const getAngleMins = (angel: number) => {
+    let mins = 0
+    if (angel >= 0) {
         // 18:00 ~ 06:00
-        if (currentAngle === 180) {
-            emits('sendCurPointTime', '06:00')
+        if (angel === 180) {
+            mins = 360
             console.log('清晨')
-        } else if (currentAngle === 0) {
-            emits('sendCurPointTime', '18:00')
+        } else if (angel === 0) {
+            mins = 1080
             console.log('傍晚')
-        } else if (currentAngle === 90) {
-            emits('sendCurPointTime', '00:00')
+        } else if (angel === 90) {
+            mins = 1440
             console.log('午夜')
-        } else if (currentAngle === -90) {
-            emits('sendCurPointTime', '12:00')
+        } else if (angel === -90) {
+            mins = 720
             console.log('正午')
-        } else if (currentAngle > 90 && currentAngle < 180) {
-            const mins = (currentAngle - 90) / 0.25
+        } else if (angel > 90 && angel < 180) {
+            mins = (angel - 90) / 0.25
             console.log('end', convertMinutesToTime(mins))
-        } else if (currentAngle > 0 && currentAngle < 90) {
-            const mins = (270 + currentAngle) / 0.25
+        } else if (angel > 0 && angel < 90) {
+            mins = (270 + angel) / 0.25
             console.log('end', convertMinutesToTime(mins))
         }   
     } else {
         // 06:00 ~ 18:00
-        const mins = time1800 - currentAngle / -0.25
+        mins = time1800 - angel / -0.25
         console.log('end', convertMinutesToTime(mins))
     } 
-    isDragging.value = false;
-};
+    return mins
+}
 
+/** canvas绘制圆弧的弧度规则 0~2Π */
+const getArcRuleRadian = (radian: number) => {
+    const ruleRadian = radian < 0 ? (2 * Math.PI + radian) : radian
+    return ruleRadian
+}
+
+/** 转化分钟为今天具体的时间 */
 const convertMinutesToTime = (mins: number) => {
   let hours = Math.floor(mins / 60);
   let minutes = mins % 60;
@@ -149,7 +230,8 @@ const convertMinutesToTime = (mins: number) => {
   return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-const getRadian = (timeMins: number) => {
+/** 获取mins对应的radian（弧度） */
+const getRadianByMins = (timeMins: number) => {
     let timeAngle = -1
     if (timeMins > time0600 && timeMins < time1800) {
         // 负角度 -180deg - 0deg
@@ -157,7 +239,7 @@ const getRadian = (timeMins: number) => {
         timeAngle = -difference
     } else if (timeMins > time1800) {
         // 正角度 0deg - 90deg
-        timeAngle = 360 - timeMins * 0.25
+        timeAngle = 90 - (360 - timeMins * 0.25)
     } else if (timeMins < time0600) {
         // 正角度 90deg - 180deg
         timeAngle = timeMins * 0.25 + 90 
@@ -186,19 +268,28 @@ const clearCanvas = () => {
     ctx.clearRect(0, 0, cvs.width, cvs.height);
 }
 
+/** mins最小点初始弧度（应用canvas弧度规则） */
 const initStartRadian = computed(() => {
-    let initStartRadian = getRadian(Math.min(...timeList.value))
+    let initStartRadian = getRadianByMins(Math.min(...props.timeList))
     initStartRadian = initStartRadian < 0 ? (2 * Math.PI + initStartRadian) : initStartRadian
     return initStartRadian
 })
-
+/** mins最大点初始弧度（应用canvas弧度规则） */
 const initEndRadian  = computed(() => {
-    let initEndRadian = getRadian(Math.max(...timeList.value))
+    let initEndRadian = getRadianByMins(Math.max(...props.timeList))
     initEndRadian = initEndRadian < 0 ? (2 * Math.PI + initEndRadian) : initEndRadian
     return initEndRadian
 })
 
-watch(() => timeList.value, () => {
+const isMaxTimePoint = computed(() => {
+    return props.timeList[curPoinIndex.value] === Math.max(...props.timeList)
+})
+const isMinTimePoint = computed(() => {
+    return props.timeList[curPoinIndex.value] === Math.min(...props.timeList)
+})
+
+watch(() => [initStartRadian.value, initEndRadian.value], () => {
+    // console.log(initStartRadian.value, initEndRadian.value, 'props.timeList')
     initTimePoint()
     clearCanvas()
     draw(initStartRadian.value, initEndRadian.value)
